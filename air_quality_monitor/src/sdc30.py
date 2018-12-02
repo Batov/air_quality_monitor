@@ -49,10 +49,10 @@ class SDC30:
         if bytes_to_read != count:
             raise ValueError("I2C read count error")
 
-        words = self._unpack_words(data)
-        co2 = unpack('f', bytes((words[0] << 16) | words[1]))
-        temp = unpack('f', bytes((words[2] << 16) | words[3]))
-        hum = unpack('f', bytes((words[4] << 16) | words[5]))
+        raw = self._unpack_bytes(data)
+        co2 = unpack('f', raw[:4])
+        temp = unpack('f', raw[4:8])
+        hum = unpack('f', raw[8:])
         return co2, temp, hum
 
     def _start_measuring(self, pressure_offset_mbar=1013):
@@ -84,23 +84,23 @@ class SDC30:
                     crc = (crc << 1) ^ 0x31;
                 else:
                     crc = (crc << 1)
-                crc = crc % 0xFF
+                crc = crc % 0x100
         return crc
 
-    def _unpack_words(self, data):
+    def _unpack_bytes(self, data):
         """
-        Unpack words and check CRC8 for each word
+        Unpack bytes and check CRC8 for each bytes coupe
         order: [MSB][LSB][CRC]
         """
         assert len(data) % 3 == 0
-        words = []
+        result = bytearray()
         for i in range(0, len(data), 3):
             crc = data[i+2]
             if self._crc(data[i:i+2]) != crc:
                 raise ValueError("CRC check failed")
-            word = (data[i] << 8) | data[i+1]
-            words.append(word)
-        return words
+            result.append(data[i])
+            result.append(data[i+1])
+        return result
 
     def _pack_words(self, words):
         """
