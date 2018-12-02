@@ -43,8 +43,12 @@ class SDC30:
         Read measurement results
         6 words + 6 CRC bytes
         """
-        self._send_cmd(CMD_READ_MEASUREMENT)
-        data = self._io.read(6*2+6)
+        self._send_cmd(self.CMD_READ_MEASUREMENT)
+        bytes_to_read = 6*2+6
+        count, data = self._io.read(bytes_to_read)
+        if bytes_to_read != count:
+            raise ValueError("I2C read count error")
+
         words = self._unpack_words(data)
         co2 = unpack('f', bytes((words[0] << 16) | words[1]))
         temp = unpack('f', bytes((words[2] << 16) | words[3]))
@@ -61,7 +65,7 @@ class SDC30:
             raise ValueError("Measurement interval must be in [2, 1800]")
         self._send_cmd(self.CMD_TRIGGER_CONT_MEASUREMENT, [interval])
 
-    def _send_cmd(self, cmd, args=None):
+    def _send_cmd(self, cmd, args=[]):
         buf = self._pack_words([cmd] + args)
         self._io.write(buf)
 
@@ -79,7 +83,8 @@ class SDC30:
                 if crc & 0x80:
                     crc = (crc << 1) ^ 0x31;
                 else:
-                    crc = (crc << 1);
+                    crc = (crc << 1)
+                crc = crc % 0xFF
         return crc
 
     def _unpack_words(self, data):
@@ -89,7 +94,7 @@ class SDC30:
         """
         assert len(data) % 3 == 0
         words = []
-        for i in range(0, len(raw_size), 3):
+        for i in range(0, len(data), 3):
             crc = data[i+2]
             if self._crc(data[i:i+2]) != crc:
                 raise ValueError("CRC check failed")
