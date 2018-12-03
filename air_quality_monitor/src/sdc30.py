@@ -1,9 +1,11 @@
 from struct import unpack
 
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
-import crc8
 
 class SDC30IO:
+    """
+    I/O operation with SDC30
+    """
 
     ADDRESS = 0x61
     BUS = 1
@@ -15,12 +17,19 @@ class SDC30IO:
         self._i2c = self._gpio.i2c_open(self.BUS, self.ADDRESS)
 
         if self._i2c < 0:
-            raise BlockingIOError("I2C device (%s) open failed, ret code: %s" % (self.ADDRESS, self._i2c))
+            raise BlockingIOError("I2C device (%s) open failed, ret code: %s"\
+            % (self.ADDRESS, self._i2c))
 
     def read(self, count):
+        """
+        Raw read data without register
+        """
         return self._gpio.i2c_read_device(self._i2c, count)
 
     def write(self, data):
+        """
+        Raw write data without register
+        """
         self._gpio.i2c_write_device(self._i2c, data)
 
 
@@ -50,9 +59,9 @@ class SDC30:
             raise ValueError("I2C read count error")
 
         raw = self._unpack_bytes(data)
-        co2 = unpack('f', raw[:4])
-        temp = unpack('f', raw[4:8])
-        hum = unpack('f', raw[8:])
+        co2 = unpack('>f', raw[:4])
+        temp = unpack('>f', raw[4:8])
+        hum = unpack('>f', raw[8:])
         return co2, temp, hum
 
     def _start_measuring(self, pressure_offset_mbar=1013):
@@ -78,10 +87,10 @@ class SDC30:
         """
         crc = 0xFF
         for byte in data:
-            crc ^= byte;
+            crc ^= byte
             for _ in range(8):
                 if crc & 0x80:
-                    crc = (crc << 1) ^ 0x31;
+                    crc = (crc << 1) ^ 0x31
                 else:
                     crc = (crc << 1)
                 crc = crc % 0x100
@@ -109,7 +118,7 @@ class SDC30:
         def msb(word):
             return (word & 0xFF00) >> 8
         def lsb(word):
-            return (word & 0x00FF)
+            return word & 0x00FF
 
         result = []
         for word in words:
