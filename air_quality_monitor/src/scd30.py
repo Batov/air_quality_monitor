@@ -92,6 +92,7 @@ class SCD30:
         """
         self._send_cmd(self.CMD_DATA_READY)
         count, responce = self._io.read(1)
+        print(responce)
         if count != 1:
             raise ValueError("I2C read data ready count error")
         return bool(responce[0])
@@ -107,7 +108,7 @@ class SCD30:
     def _set_measurement_interval(self, interval=2):
         if interval not in range(2, 1800):
             raise ValueError("Measurement interval must be in [2, 1800]")
-        self._send_cmd(self.CMD_TRIGGER_CONT_MEASUREMENT, [interval])
+        self._send_cmd(self.CMD_SET_MEASUREMENT_INTERVAL, [interval])
 
     def _set_auto_self_calibration(self, enable=True):
         self._send_cmd(self.CMD_AUTO_SELF_CALIBRATION, [int(enable)])
@@ -115,7 +116,7 @@ class SCD30:
     def _send_cmd(self, cmd, args=None):
         if args is None:
             args = []
-        buf = self._pack_words([cmd] + args)
+        buf = self._pack_cmd(cmd, args)
         self._io.write(buf)
 
     def _crc(self, data):
@@ -151,7 +152,7 @@ class SCD30:
             result.append(data[i+1])
         return result
 
-    def _pack_words(self, words):
+    def _pack_cmd(self, cmd, args):
         """
         Pack words with CRC8
         """
@@ -160,9 +161,9 @@ class SCD30:
         def lsb(word):
             return word & 0x00FF
 
-        result = []
-        for word in words:
-            data = [msb(word), lsb(word)]
+        result = [msb(cmd), lsb(cmd)]
+        for arg in args:
+            data = [msb(arg), lsb(arg)]
             crc = self._crc(data)
             result += data + [crc]
 
@@ -179,10 +180,10 @@ if __name__ == "__main__":
         """
         def __init__(self):
             print("AsyncReader:")
-            self.SCD = SCD30(self._cb)
+            self.scd = SCD30(self._cb)
 
         def _cb(self):
-            data = self.SCD.read_measurement()
+            data = self.scd.read_measurement()
             print(data)
 
         def wait(self):
@@ -198,19 +199,19 @@ if __name__ == "__main__":
         """
         def __init__(self):
             print("SyncReader:")
-            self.SCD = SCD30()
+            self.scd = SCD30()
 
         def poll(self):
             """
             Poll data_ready() method
             """
             for _ in range(7):
-                if self.SCD.data_ready():
-                    print(self.SCD.read_measurement())
+                if self.scd.data_ready():
+                    print(self.scd.read_measurement())
                 time.sleep(1)
-
-    READER = AsyncReader()
-    READER.wait()
 
     READER = SyncReader()
     READER.poll()
+
+    READER = AsyncReader()
+    READER.wait()
