@@ -180,48 +180,9 @@ class SCD30:
 
 
 if __name__ == "__main__":
-    import time
+    scd = SCD30()
 
-    class AsyncReader:
-        """
-        Wait for async data_ready events
-        And read measurements
-        """
-        def __init__(self):
-            print("AsyncReader:")
-            self.scd = SCD30(self._cb)
-
-        def _cb(self):
-            data = self.scd.read_measurement()
-            print(data)
-
-        @staticmethod
-        def wait():
-            """
-            Wait events
-            """
-            time.sleep(7)
-
-    class SyncReader:
-        """
-        Poll data_ready status
-        And read measurement
-        """
-        def __init__(self):
-            print("SyncReader:")
-            self.scd = SCD30()
-
-        def poll(self):
-            """
-            Poll data_ready() method
-            """
-            for _ in range(7):
-                if self.scd.data_ready():
-                    print(self.scd.read_measurement())
-                time.sleep(1)
-
-    READER = SyncReader()
-    READER.poll()
-
-    READER = AsyncReader()
-    READER.wait()
+    for _ in range(7):
+        if scd.data_ready():
+            print(scd.read_measurement())
+        sleep(1)
