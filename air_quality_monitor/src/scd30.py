@@ -2,9 +2,9 @@ from struct import unpack
 
 import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
 
-class SDC30IO:
+class SCD30IO:
     """
-    I/O operation with SDC30
+    I/O operation with SCD30
     """
     ADDRESS = 0x61
     BUS = 1
@@ -45,7 +45,7 @@ class SDC30IO:
         self._gpio.i2c_write_device(self._i2c, data)
 
 
-class SDC30:
+class SCD30:
     """
     doc/SCD30_Interface_Description.pdf
     """
@@ -55,14 +55,13 @@ class SDC30:
     CMD_READ_MEASUREMENT = 0x0300
     CMD_AUTO_SELF_CALIBRATION = 0x5306
     CMD_DATA_READY = 0x0202
-    
 
     def __init__(self, data_ready_cb=None):
         """
         data_ready_cb - callback will trigger at data ready event
-        You can poll SDC30.data_ready() for same event
+        You can poll SCD30.data_ready() for same event
         """
-        self._io = SDC30IO(data_ready_cb)
+        self._io = SCD30IO(data_ready_cb)
 
         self._set_measurement_interval(2)
         self._set_auto_self_calibration(enable=True)
@@ -180,10 +179,10 @@ if __name__ == "__main__":
         """
         def __init__(self):
             print("AsyncReader:")
-            self.sdc = SDC30(self._cb)
+            self.SCD = SCD30(self._cb)
 
         def _cb(self):
-            data = self.sdc.read_measurement()
+            data = self.SCD.read_measurement()
             print(data)
 
         def wait(self):
@@ -199,15 +198,15 @@ if __name__ == "__main__":
         """
         def __init__(self):
             print("SyncReader:")
-            self.sdc = SDC30()
+            self.SCD = SCD30()
 
         def poll(self):
             """
             Poll data_ready() method
             """
             for _ in range(7):
-                if self.sdc.data_ready():
-                    print(self.sdc.read_measurement())
+                if self.SCD.data_ready():
+                    print(self.SCD.read_measurement())
                 time.sleep(1)
 
     READER = AsyncReader()
