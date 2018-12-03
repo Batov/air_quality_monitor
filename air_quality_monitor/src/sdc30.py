@@ -35,7 +35,7 @@ class SDC30IO:
 
 class SDC30:
     """
-    https://cdn.sparkfun.com/assets/d/c/0/7/2/SCD30_Interface_Description.pdf
+    doc/SCD30_Interface_Description.pdf
     """
     CMD_TRIGGER_CONT_MEASUREMENT = 0x0010
     CMD_SET_MEASUREMENT_INTERVAL = 0x4600
@@ -64,7 +64,7 @@ class SDC30:
         hum = unpack('>f', raw[8:])
         return co2, temp, hum
 
-    def _start_measuring(self, pressure_offset_mbar=1013):
+    def _start_measuring(self, pressure_offset_mbar=1000):
         if pressure_offset_mbar not in range(700, 1200):
             raise ValueError("Pressure offset must be in [700, 1200]")
         self._send_cmd(self.CMD_TRIGGER_CONT_MEASUREMENT, [pressure_offset_mbar])
@@ -74,7 +74,9 @@ class SDC30:
             raise ValueError("Measurement interval must be in [2, 1800]")
         self._send_cmd(self.CMD_TRIGGER_CONT_MEASUREMENT, [interval])
 
-    def _send_cmd(self, cmd, args=[]):
+    def _send_cmd(self, cmd, args=None):
+        if args is None:
+            args = []
         buf = self._pack_words([cmd] + args)
         self._io.write(buf)
 
@@ -82,7 +84,7 @@ class SDC30:
         """
         Calculate CRC8 for SCD30
         x^8+x^5+x^4+1 = 0x31
-        https://cdn.sparkfun.com/assets/d/c/0/7/2/SCD30_Interface_Description.pdf
+        doc/SCD30_Interface_Description.pdf
         p. 1.1.3
         """
         crc = 0xFF
