@@ -50,10 +50,12 @@ class SDC30:
     doc/SCD30_Interface_Description.pdf
     """
     CMD_TRIGGER_CONT_MEASUREMENT = 0x0010
+    CMD_STOP_CONT_MEASUREMENT = 0x0104
     CMD_SET_MEASUREMENT_INTERVAL = 0x4600
     CMD_READ_MEASUREMENT = 0x0300
     CMD_AUTO_SELF_CALIBRATION = 0x5306
     CMD_DATA_READY = 0x0202
+    
 
     def __init__(self, data_ready_cb=None):
         """
@@ -99,6 +101,9 @@ class SDC30:
         if pressure_offset_mbar not in range(700, 1200):
             raise ValueError("Pressure offset must be in [700, 1200]")
         self._send_cmd(self.CMD_TRIGGER_CONT_MEASUREMENT, [pressure_offset_mbar])
+
+    def _stop_measuring(self):
+        self._send_cmd(self.CMD_STOP_CONT_MEASUREMENT)
 
     def _set_measurement_interval(self, interval=2):
         if interval not in range(2, 1800):
@@ -185,7 +190,7 @@ if __name__ == "__main__":
             """
             Wait events
             """
-            time.sleep(6)
+            time.sleep(7)
 
     class SyncReader:
         """
@@ -200,7 +205,7 @@ if __name__ == "__main__":
             """
             Poll data_ready() method
             """
-            for _ in range(6):
+            for _ in range(7):
                 if self.sdc.data_ready():
                     print(self.sdc.read_measurement())
                 time.sleep(1)
