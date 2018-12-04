@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "f05f9e300c88030ff492b1c6c019990ad9d8656221ef7c28e7636a2f86a79791"
+            "sha256": "a87a6dd93f6f94652824b686397928681b8a95c35c1cd98a0b2ccaca39b46213"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -15,6 +15,22 @@
             }
         ]
     },
-    "default": {},
+    "default": {
+        "gpiozero": {
+            "hashes": [
+                "sha256:1ea5b582ceaf98b33914c60916a56651d8b187e33642aa77b15df33909a228c8",
+                "sha256:b4b074e56dea12c21b05e6feef792719a392a245f5e685bc56be3dc2546f8609"
+            ],
+            "index": "pypi",
+            "version": "==1.4.1"
+        },
+        "smbus2": {
+            "hashes": [
+                "sha256:b8d943ffe74670be969b5be79f47df0f597e91e8e0df2bc0d57203b1c2cabf2b"
+            ],
+            "index": "pypi",
+            "version": "==0.2.1"
+        }
+    },
     "develop": {}
 }

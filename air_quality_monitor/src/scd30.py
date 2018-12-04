@@ -1,7 +1,7 @@
 from struct import unpack
 from time import sleep
 
-import pigpio # http://abyz.co.uk/rpi/pigpio/python.html
+from smbus2 import SMBusWrapper, i2c_msg
 
 class SCD30IO:
     """
@@ -11,38 +11,34 @@ class SCD30IO:
     BUS = 1
     DATA_RDY_PIN = 4
 
-    def __init__(self, int_callback=None):
-        """
-        Set int_callback for forward data_ready event
-        """
-        self._cb = int_callback
-        self._pi = pigpio.pi()
+    def __init__(self, use_pin=False):
+        self.use_pin = use_pin
+        if use_pin:
+            from gpiozero import Button
+            self._pin = Button(self.DATA_RDY_PIN, pull_up=False)
 
-        if int_callback:
-            self._pi.set_mode(self.DATA_RDY_PIN, pigpio.INPUT)
-            self._pi.callback(self.DATA_RDY_PIN, pigpio.RISING_EDGE, self._pigpio_cb)
-
-    def _pigpio_cb(self, gpio, level, _):
-        if gpio == self.DATA_RDY_PIN and level:
-            if self._cb:
-                self._cb()
+    def is_ready(self):
+        """
+        True if data ready pin is high
+        """
+        return self.use_pin and self._pin.is_pressed
 
     def read(self, count):
         """
         Raw read data without register
         """
-        i2c = self._pi.i2c_open(self.BUS, self.ADDRESS)
-        data = self._pi.i2c_read_device(i2c, count)
-        self._pi.i2c_close(i2c)
-        return data
+        with SMBusWrapper(self.BUS,) as bus:
+            msg = i2c_msg.read(self.ADDRESS, count)
+            bus.i2c_rdwr(msg)
+        return list(msg)
 
     def write(self, data):
         """
         Raw write data without register
         """
-        i2c = self._pi.i2c_open(self.BUS, self.ADDRESS)
-        self._pi.i2c_write_device(i2c, data)
-        self._pi.i2c_close(i2c)
+        with SMBusWrapper(self.BUS,) as bus:
+            msg = i2c_msg.write(self.ADDRESS, data)
+            bus.i2c_rdwr(msg)
 
 
 class SCD30:
@@ -56,19 +52,19 @@ class SCD30:
     CMD_AUTO_SELF_CALIBRATION = 0x5306
     CMD_DATA_READY = 0x0202
 
-    def __init__(self, data_ready_cb=None):
+    def __init__(self, use_pin=False):
         """
         data_ready_cb - callback will trigger at data ready event
         You can poll SCD30.data_ready() for same event
         """
-        self._io = SCD30IO(data_ready_cb)
+        self._io = SCD30IO(use_pin)
 
         self._start_measuring()
         self._set_measurement_interval(2)
         self._set_auto_self_calibration(enable=True)
 
-        sleep(0.1) # wait for start
-        self.read_measurement() # Dummy read for flush data_ready status
+        # TODO: Remove it or add datasheet reference
+        sleep(0.1)
 
     def read_measurement(self):
         """
@@ -77,10 +73,7 @@ class SCD30:
         """
         self._send_cmd(self.CMD_READ_MEASUREMENT)
         bytes_to_read = 6*2+6
-        count, data = self._io.read(bytes_to_read)
-        if bytes_to_read != count:
-            raise ValueError("I2C read measurement count error")
-
+        data = self._io.read(bytes_to_read)
         raw = self._unpack_bytes(data)
         co2 = unpack('>f', raw[:4])
         temp = unpack('>f', raw[4:8])
@@ -92,12 +85,13 @@ class SCD30:
         Check data ready status
         Return True or False
         """
-        self._send_cmd(self.CMD_DATA_READY)
-        bytes_to_read = 2
-        count, responce = self._io.read(bytes_to_read)
-        if count != bytes_to_read:
-            raise ValueError("I2C read data ready count error")
-        return bool(responce[1])
+        if self._io.use_pin:
+            return self._io.is_ready()
+        else:
+            self._send_cmd(self.CMD_DATA_READY)
+            bytes_to_read = 2
+            responce = self._io.read(bytes_to_read)
+            return bool(responce[1])
 
     def _start_measuring(self, pressure_offset_mbar=1000):
         if pressure_offset_mbar not in range(700, 1200):
@@ -150,6 +144,9 @@ class SCD30:
         for i in range(0, len(data), 3):
             crc = data[i+2]
             if self._crc(data[i:i+2]) != crc:
+                print(data[i:i+2])
+                print(crc)
+                print(self._crc(data[i:i+2]))
                 raise ValueError("CRC check failed")
             result.append(data[i])
             result.append(data[i+1])
@@ -180,9 +177,16 @@ class SCD30:
 
 
 if __name__ == "__main__":
-    scd = SCD30()
+    def test(sensor):
+        for _ in range(7):
+            if sensor.data_ready():
+                print(sensor.read_measurement())
+            sleep(1)
 
-    for _ in range(7):
-        if scd.data_ready():
-            print(scd.read_measurement())
-        sleep(1)
+    print("Pin polling example:")
+    scd30_pin = SCD30(use_pin=True)
+    test(scd30_pin) 
+
+    print("I2C polling example:")
+    scd30_i2c = SCD30(use_pin=False)
+    test(scd30_i2c) 
