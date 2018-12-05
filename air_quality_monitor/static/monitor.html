@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
+    <script src="http://people.iola.dk/olau/flot/jquery.flot.js"></script>
+    <script>
+    var iets = "";
+    window.onload = function() 
+    {
+        var co2_history = [];
+        var index = 0;
+        var s = new WebSocket("ws://" + window.location.hostname + ":8000/data");
+
+        s.onmessage = function(e) 
+        {
+            var lines = e.data.split('\n');
+
+            for (var i = 0; i < lines.length - 1; i++) 
+            {
+                var parts = lines[i].split(' ');
+                var co2 = parts[0];
+                var temp = parts[1];
+                var hum = parts[2];
+
+                index += 1;
+
+                console.log(co2);
+                console.log(temp);
+                console.log(hum);
+
+                co2_history.push([index, co2]);
+            }
+
+            var plots = [{ data: co2_history.slice(co2_history.length - 200)}];
+            $.plot($("#co2"), plots);
+        };
+    };
+    </script>
+</head>
+    <body>
+    <h3>CO2</h3>
+    <div id="co2" style="width:300px;height:200px"></div>
+    </body>
+</html>
