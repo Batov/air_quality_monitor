@@ -87,11 +87,11 @@ class SCD30:
         """
         if self._io.use_pin:
             return self._io.is_ready()
-        else:
-            self._send_cmd(self.CMD_DATA_READY)
-            bytes_to_read = 2
-            responce = self._io.read(bytes_to_read)
-            return bool(responce[1])
+
+        self._send_cmd(self.CMD_DATA_READY)
+        bytes_to_read = 2
+        responce = self._io.read(bytes_to_read)
+        return bool(responce[1])
 
     def _start_measuring(self, pressure_offset_mbar=1000):
         if pressure_offset_mbar not in range(700, 1200):
