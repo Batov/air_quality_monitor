@@ -1,44 +1,77 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.4.1/jquery.min.js"></script>
-    <script src="http://people.iola.dk/olau/flot/jquery.flot.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flot/0.8.3/jquery.flot.time.js"></script>
     <script>
     var iets = "";
     window.onload = function() 
     {
-        var co2_history = [];
-        var index = 0;
-        var s = new WebSocket("ws://" + window.location.hostname + ":8000/data");
+        var history = {
+            "co2": [],
+            "temp": [],
+            "hum": [],
+            "eco2": [],
+            "tvoc": []
+        };
 
+        function new_record(type, time, data)
+        {
+            history[type].push([time, data]);
+            history[type] = history[type].slice(-300)
+            console.log(history[type])
+            $("#" + type).html(data)
+            options = {
+                        xaxis:
+                            {
+                                mode: "time",
+                                timezone: "browser"
+                            }
+                        } 
+
+            $.plot($("#" + type + "_plot"), [{data: history[type]}], options);
+        }
+
+        var s = new WebSocket("ws://" + window.location.hostname + ":8000/data");
         s.onmessage = function(e) 
         {
-            var lines = e.data.split('\n');
+            console.log(e.data)
+            var parts = e.data.split(' ');
+            var co2 = parseFloat(parts[0]);
+            var temp = parseFloat(parts[1]);
+            var hum = parseFloat(parts[2]);
+            var eco2 = parseFloat(parts[3]);
+            var tvoc = parseFloat(parts[4]);
 
-            for (var i = 0; i < lines.length - 1; i++) 
-            {
-                var parts = lines[i].split(' ');
-                var co2 = parts[0];
-                var temp = parts[1];
-                var hum = parts[2];
+            var time = new Date()
 
-                index += 1;
+            new_record("co2", time, co2);
+            new_record("temp", time, temp);
+            new_record("hum", time, hum);
+            new_record("eco2", time, eco2);
+            new_record("tvoc", time, tvoc);
 
-                console.log(co2);
-                console.log(temp);
-                console.log(hum);
-
-                co2_history.push([index, co2]);
-            }
-
-            var plots = [{ data: co2_history.slice(co2_history.length - 200)}];
-            $.plot($("#co2"), plots);
         };
     };
     </script>
 </head>
     <body>
+    <h1>Air quality monitor</h1>
     <h3>CO2</h3>
-    <div id="co2" style="width:300px;height:200px"></div>
+    <div id="co2"></div>
+    <div id="co2_plot" style="width:800px;height:300px"></div>
+    <h3>Temperature</h3>
+    <div id="temp"></div>
+    <div id="temp_plot" style="width:800px;height:300px"></div>
+    <h3>Humidity</h3>
+    <div id="hum"></div>
+    <div id="hum_plot" style="width:800px;height:300px"></div>
+    <h3>eCO2</h3>
+    <div id="eco2"></div>
+    <div id="eco2_plot" style="width:800px;height:300px"></div>
+    <h3>TVOC</h3>
+    <div id="tvoc"></div>
+    <div id="tvoc_plot" style="width:800px;height:300px"></div>
     </body>
 </html>

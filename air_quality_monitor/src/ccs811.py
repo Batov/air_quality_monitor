@@ -137,7 +137,7 @@ class CCS811:
         data = buf[:4]
         eCO2 = (data[0] << 8) | (data[1])
         TVOC = (data[2] << 8) | (data[3])
-        return eCO2, self._read_temperature(), TVOC
+        return float(eCO2), float(self._read_temperature()), float(TVOC)
 
     def set_environment(self, temperature, humidity):
         """
