@@ -41,14 +41,21 @@ GPIO17 |-----| INT    |
   * `sudo nano /boot/config.txt`
   * Add `dtparam=i2c_baudrate=10000`
 
-## Install && run
-* `pipenv install`
-* `pipenv run air_quality_monitor/src/cli_monitor.py`
+## Install
+`pipenv install`
+
+## Run CLI
+`pipenv run air_quality_monitor/src/cli_monitor.py`
+
+## Run WEB
+* `pipenv run air_quality_monitor/src/web_monitor.py`
+* Open browser on 192.168.1.33:8000, where 192.168.1.33 - local RPi IP
 
 ## Project overview
 * `src/`
   * `scd30.py` - driver for SCD30
   * `ccs811.py` - driver for CCS811
   * `cli_monitor.py` - CLI air monitor
+  * `web_monitor.py` - WEB air monitor
 * `doc/` - sensor's datasheets
-
+* `static/` - HTML pages got web air monitor
