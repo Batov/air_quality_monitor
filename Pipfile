@@ -9,6 +9,7 @@ verify_ssl = true
 smbus2 = "*"
 gpiozero = "*"
 gevent = "*"
+gevent-websocket = "*"
 
 [requires]
 python_version = "3.5"

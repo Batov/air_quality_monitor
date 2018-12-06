@@ -4,7 +4,6 @@ monkey.patch_all()
 from time import time
 
 import gevent
-
 from geventwebsocket import WebSocketServer, WebSocketApplication, Resource
 
 from scd30 import SCD30
@@ -12,6 +11,9 @@ from ccs811 import CCS811
 
 
 class Monitor:
+    """
+    Data poller
+    """
     def __init__(self):
         self.scd30 = SCD30(use_pin=True)
         self.ccs811 = CCS811(use_pin=True)
@@ -42,13 +44,22 @@ class Monitor:
             gevent.sleep(0.5)
 
 def get_monitor():
+    """
+    Singleton
+    """
     if get_monitor.instance is None:
         get_monitor.instance = Monitor()
     return get_monitor.instance
 get_monitor.instance = None
 
 class Application(WebSocketApplication):
+    """
+    Web App class
+    """
     def on_open(self):
+        """
+        On socket open callback
+        """
         mon = get_monitor()
         while True:
             self.ws.send("%.1f %.1f %.1f %.1f %.1f" %
@@ -56,9 +67,15 @@ class Application(WebSocketApplication):
             gevent.sleep(0.05)
 
     def on_close(self, reason):
-        print("Connection Closed", reason)
+        """
+        On socket close callback
+        """
+        print("Connection closed", reason)
 
 def get_html(_, start_response):
+    """
+    Get HTML for browser
+    """
     start_response("200 OK", [("Content-Type", "text/html")])
     return [bytes(line, "utf-8") 
             for line in open("air_quality_monitor/static/monitor.html").readlines()]
