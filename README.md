@@ -45,17 +45,22 @@ GPIO17 |-----| INT    |
 `pipenv install`
 
 ## Run CLI
-`pipenv run air_quality_monitor/src/cli_monitor.py`
+`pipenv run python air_quality_monitor/src/monitor.py`
+
+## Run CSV
+* `pipenv run python air_quality_monitor/src/csv_monitor.py`
+* Check `air_log.csv`
 
 ## Run WEB
-* `pipenv run air_quality_monitor/src/web_monitor.py`
+* `pipenv run python air_quality_monitor/src/web_monitor.py`
 * Open browser on 192.168.1.33:8000, where 192.168.1.33 - local RPi IP
 
 ## Project overview
 * `src/`
   * `scd30.py` - driver for SCD30
   * `ccs811.py` - driver for CCS811
-  * `cli_monitor.py` - CLI air monitor
+  * `monitor.py` - Base monitor
   * `web_monitor.py` - WEB air monitor
+  * `csv_monitor.py` - CSV air monitor
 * `doc/` - sensor's datasheets
 * `static/` - HTML pages got web air monitor
